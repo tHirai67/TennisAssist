@@ -262,7 +262,21 @@ public class MainActivity extends Activity implements SensorEventListener {
     }
 
     public void resample(String type){
-
+        ArrayList<Double> t = new ArrayList<>();
+        ArrayList<Float> x = new ArrayList<>();
+        ArrayList<Float> y = new ArrayList<>();
+        ArrayList<Float> z = new ArrayList<>();
+        if(type == "Acc"){
+            t = tAcc;
+            x = xAcc;
+            y = yAcc;
+            z = zAcc;
+        }else if(type == "Gyro"){
+            t = tGyro;
+            x = xGyro;
+            y = yGyro;
+            z = zGyro;
+        }
         //リサンプリング後の格納用配列を用意
         ArrayList<Double> resampledTime = new ArrayList<>();
         ArrayList<Float> resampledX = new ArrayList<>();
@@ -270,8 +284,8 @@ public class MainActivity extends Activity implements SensorEventListener {
         ArrayList<Float> resampledZ = new ArrayList<>();
 
         //開始時間と終了時間
-        double startTime = tAcc.get(0);
-        double endTime = tAcc.get(tAcc.size() - 1 );
+        double startTime = t.get(0);
+        double endTime = t.get(tAcc.size() - 1 );
         //リサンプリングの間隔
         double interval = 1.0 / 50;
 
@@ -282,35 +296,45 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
 
         for(int i = 0; i <= resampledTime.size() - 1; i++){
-            for(int j = 0; j < tAcc.size() - 1; j++){
-                if(tAcc.get(j) == i){
-                    resampledX.add(xAcc.get(j));
-                    resampledY.add(yAcc.get(j));
-                    resampledZ.add(zAcc.get(j));
+            for(int j = 0; j < t.size() - 1; j++){
+                if(t.get(j) == i){
+                    resampledX.add(x.get(j));
+                    resampledY.add(y.get(j));
+                    resampledZ.add(z.get(j));
                     break;
-                }if(tAcc.get(j) < resampledTime.get(i) && resampledTime.get(i) < tAcc.get(j+1)){
+                }if(t.get(j) < resampledTime.get(i) && resampledTime.get(i) < t.get(j+1)){
                     //傾きを計算
-                    float kx = (float) ((xAcc.get(j+1) - xAcc.get(j)) / (tAcc.get(j+1) - tAcc.get(j)));
-                    float ky = (float) ((yAcc.get(j+1) - yAcc.get(j)) / (tAcc.get(j+1) - tAcc.get(j)));
-                    float kz = (float) ((zAcc.get(j+1) - zAcc.get(j)) / (tAcc.get(j+1) - tAcc.get(j)));
+                    float kx = (float) ((x.get(j+1) - x.get(j)) / (t.get(j+1) - t.get(j)));
+                    float ky = (float) ((y.get(j+1) - y.get(j)) / (t.get(j+1) - t.get(j)));
+                    float kz = (float) ((z.get(j+1) - z.get(j)) / (t.get(j+1) - t.get(j)));
                     //線形補間の計算
-                    resampledX.add((float) (kx * (resampledTime.get(i) - tAcc.get(j)) + xAcc.get(j)));
-                    resampledY.add((float) (ky * (resampledTime.get(i) - tAcc.get(j)) + yAcc.get(j)));
-                    resampledZ.add((float) (kz * (resampledTime.get(i) - tAcc.get(j)) + zAcc.get(j)));
+                    resampledX.add((float) (kx * (resampledTime.get(i) - t.get(j)) + x.get(j)));
+                    resampledY.add((float) (ky * (resampledTime.get(i) - t.get(j)) + y.get(j)));
+                    resampledZ.add((float) (kz * (resampledTime.get(i) - t.get(j)) + z.get(j)));
                     break;
                 }
             }
         }
 
-        xAcc.clear();
-        xAcc.addAll(resampledX);
-        yAcc.clear();
-        yAcc.addAll(resampledY);
-        zAcc.clear();
-        zAcc.addAll(resampledZ);
-        tAcc.clear();
-        tAcc.addAll(resampledTime);
-
+        if(type == "Acc"){
+            xAcc.clear();
+            xAcc.addAll(resampledX);
+            yAcc.clear();
+            yAcc.addAll(resampledY);
+            zAcc.clear();
+            zAcc.addAll(resampledZ);
+            tAcc.clear();
+            tAcc.addAll(resampledTime);
+        }else if(type == "Gyro"){
+            xGyro.clear();
+            xGyro.addAll(resampledX);
+            yGyro.clear();
+            yGyro.addAll(resampledY);
+            zGyro.clear();
+            zGyro.addAll(resampledZ);
+            tGyro.clear();
+            tGyro.addAll(resampledTime);
+        }
     }
 
     public void reset(){
