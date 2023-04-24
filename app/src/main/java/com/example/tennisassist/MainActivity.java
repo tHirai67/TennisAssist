@@ -30,7 +30,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     private SensorManager accSensorManager, gyroSensorManager;
     private TextView tTextView, sTextView, caTextView, cgTextView;
-    private float x, y, z;
     private double pastime, time;
     private int button_flag = 0;
     public long post_acc = 0;
@@ -175,24 +174,18 @@ public class MainActivity extends Activity implements SensorEventListener {
 
             if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
                 time = ((System.currentTimeMillis() - pastime)/1000);
-                x = event.values[0];
-                y = event.values[1];
-                z = event.values[2];
 
-                xAcc.add(x);
-                yAcc.add(y);
-                zAcc.add(z);
+                xAcc.add(event.values[0]);
+                yAcc.add(event.values[1]);
+                zAcc.add(event.values[2]);
                 tAcc.add(time);
 
             }else if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
                 time = ((System.currentTimeMillis() - pastime)/1000);
-                x = event.values[0];
-                y = event.values[1];
-                z = event.values[2];
 
-                xGyro.add(x);
-                yGyro.add(y);
-                zGyro.add(z);
+                xGyro.add(event.values[0]);
+                yGyro.add(event.values[0]);
+                zGyro.add(event.values[0]);
                 tGyro.add(time);
             }
             tTextView.setText(String.format("Time:%.3f.s",time));
@@ -203,6 +196,8 @@ public class MainActivity extends Activity implements SensorEventListener {
             button_flag = 0;
         }else if(button_flag == 4){
             sTextView.setText(String.format("保存済み"));
+            resample("Acc");
+            resample("Gyro");
             fileSave("Acc");
             fileSave("Gyro");
             button_flag = 5;
@@ -222,6 +217,8 @@ public class MainActivity extends Activity implements SensorEventListener {
     }
 
     public void fileSave(String type){
+
+
         //ファイル名を作成
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
         String filename = sdf.format(new Date()) +"_" + type +  ".csv";
@@ -262,6 +259,58 @@ public class MainActivity extends Activity implements SensorEventListener {
         } catch (IOException e){
             e.printStackTrace();
         }
+    }
+
+    public void resample(String type){
+
+        //リサンプリング後の格納用配列を用意
+        ArrayList<Double> resampledTime = new ArrayList<>();
+        ArrayList<Float> resampledX = new ArrayList<>();
+        ArrayList<Float> resampledY = new ArrayList<>();
+        ArrayList<Float> resampledZ = new ArrayList<>();
+
+        //開始時間と終了時間
+        double startTime = tAcc.get(0);
+        double endTime = tAcc.get(tAcc.size() - 1 );
+        //リサンプリングの間隔
+        double interval = 1.0 / 50;
+
+        double currentTime = startTime;
+        while(currentTime < endTime){
+            resampledTime.add(currentTime);
+            currentTime += interval;
+        }
+
+        for(int i = 0; i <= resampledTime.size() - 1; i++){
+            for(int j = 0; j < tAcc.size() - 1; j++){
+                if(tAcc.get(j) == i){
+                    resampledX.add(xAcc.get(j));
+                    resampledY.add(yAcc.get(j));
+                    resampledZ.add(zAcc.get(j));
+                    break;
+                }if(tAcc.get(j) < resampledTime.get(i) && resampledTime.get(i) < tAcc.get(j+1)){
+                    //傾きを計算
+                    float kx = (float) ((xAcc.get(j+1) - xAcc.get(j)) / (tAcc.get(j+1) - tAcc.get(j)));
+                    float ky = (float) ((yAcc.get(j+1) - yAcc.get(j)) / (tAcc.get(j+1) - tAcc.get(j)));
+                    float kz = (float) ((zAcc.get(j+1) - zAcc.get(j)) / (tAcc.get(j+1) - tAcc.get(j)));
+                    //線形補間の計算
+                    resampledX.add((float) (kx * (resampledTime.get(i) - tAcc.get(j)) + xAcc.get(j)));
+                    resampledY.add((float) (ky * (resampledTime.get(i) - tAcc.get(j)) + yAcc.get(j)));
+                    resampledZ.add((float) (kz * (resampledTime.get(i) - tAcc.get(j)) + zAcc.get(j)));
+                    break;
+                }
+            }
+        }
+
+        xAcc.clear();
+        xAcc.addAll(resampledX);
+        yAcc.clear();
+        yAcc.addAll(resampledY);
+        zAcc.clear();
+        zAcc.addAll(resampledZ);
+        tAcc.clear();
+        tAcc.addAll(resampledTime);
+
     }
 
     public void reset(){
