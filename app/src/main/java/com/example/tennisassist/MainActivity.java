@@ -198,8 +198,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         }else if(button_flag == 4){
             sTextView.setText(String.format("保存済み"));
             synchronization();
-            fileSave("Acc");
-            fileSave("Gyro");
+            fileSave();
             button_flag = 5;
         }
 
@@ -210,12 +209,11 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     }
 
-    public void fileSave(String type){
-
+    public void fileSave(){
 
         //ファイル名を作成
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
-        String filename = sdf.format(new Date()) +"_" + type +  ".csv";
+        String filename = sdf.format(new Date())  +  ".csv";
 
         //CSVファイルを出力
         try{
@@ -223,26 +221,14 @@ public class MainActivity extends Activity implements SensorEventListener {
             OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
             PrintWriter writer = new PrintWriter(osw);
 
-            if(type == "Acc"){
-                //ヘッダー
-                writer.print("時刻,X軸加速度,Y軸加速度,Z軸加速度\n");
-                //データ出力
-                int size = xAcc.size();
-                for(int i = 0; i < size; i++){
-                    String line = String.format(Locale.getDefault(), "%.3f,%.3f,%.3f,%.3f\n",
-                            tAcc.get(i), xAcc.get(i), yAcc.get(i), zAcc.get(i));
-                    writer.print(line);
-                }
-            }else if(type == "Gyro"){
-                //ヘッダー
-                writer.print("時刻,X軸角速度,Y軸角速度,Z軸角速度\n");
-                //データ出力
-                int size = xGyro.size();
-                for(int i = 0; i < size; i++){
-                    String line = String.format(Locale.getDefault(), "%.3f,%.3f,%.3f,%.3f\n",
-                            tGyro.get(i), xGyro.get(i), yGyro.get(i), zGyro.get(i));
-                    writer.print(line);
-                }
+            //ヘッダー
+            writer.print("時刻,X軸加速度,Y軸加速度,Z軸加速度,時刻,時刻,X軸角速度,Y軸角速度,Z軸角速度\n");
+            //データ出力
+            int size = xAcc.size();
+            for(int i = 0; i < size; i++){
+                String line = String.format(Locale.getDefault(), "%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
+                        tAcc.get(i), xAcc.get(i), yAcc.get(i), zAcc.get(i),tGyro.get(i), xGyro.get(i), yGyro.get(i), zGyro.get(i));
+                writer.print(line);
             }
 
             writer.close();
@@ -280,7 +266,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                 zAcc.set(i,zAcc.get(i+slide_count));
             }
             //スライドした分の後ろの要素を削除
-            for(int i = 0; i < slide_count && i < tAcc.size(); i++){
+            for(int i = tAcc.size() - slide_count; i < tAcc.size(); i++){
                 tAcc.remove(tAcc.size() - 1);
                 xAcc.remove(tAcc.size() - 1);
                 yAcc.remove(tAcc.size() - 1);
@@ -297,22 +283,21 @@ public class MainActivity extends Activity implements SensorEventListener {
                 }
             }
             //スライド
-            for(int i = 0; i < tGyro.size() - slide_count - 1; i++){
-                tGyro.set(i,tGyro.get(i+slide_count));
-                xGyro.set(i,xGyro.get(i+slide_count));
-                yGyro.set(i,yGyro.get(i+slide_count));
-                zGyro.set(i,zGyro.get(i+slide_count));
+            for(int i = 0; i < tGyro.size() - slide_count; i++){
+                tGyro.set(i, tGyro.get(i + slide_count));
+                xGyro.set(i, xGyro.get(i + slide_count));
+                yGyro.set(i, yGyro.get(i + slide_count));
+                zGyro.set(i, zGyro.get(i + slide_count));
             }
             //スライドした分の後ろの要素を削除
-            for(int i = 0; i < slide_count && i < tGyro.size(); i++){
+            for (int i = tGyro.size() - slide_count; i < tGyro.size(); i++) {
                 tGyro.remove(tGyro.size() - 1);
-                xGyro.remove(tGyro.size() - 1);
-                yGyro.remove(tGyro.size() - 1);
-                zGyro.remove(tGyro.size() - 1);
+                xGyro.remove(xGyro.size() - 1);
+                yGyro.remove(yGyro.size() - 1);
+                zGyro.remove(zGyro.size() - 1);
             }
         }
-        Log.d("Acc_size",String.valueOf(tAcc.size()));
-        Log.d("Gyro_size",String.valueOf(tGyro.size()));
+
         //余った分の削除
         if(tAcc.size() < tGyro.size()){ //加速度を基準
             while(tAcc.size() != tGyro.size()){
