@@ -185,8 +185,8 @@ public class MainActivity extends Activity implements SensorEventListener {
                 time = ((System.currentTimeMillis() - pastime)/1000);
 
                 xGyro.add(event.values[0]);
-                yGyro.add(event.values[0]);
-                zGyro.add(event.values[0]);
+                yGyro.add(event.values[1]);
+                zGyro.add(event.values[2]);
                 tGyro.add(time);
             }
             tTextView.setText(String.format("Time:%.3f.s",time));
@@ -314,19 +314,19 @@ public class MainActivity extends Activity implements SensorEventListener {
         Log.d("Acc_size",String.valueOf(tAcc.size()));
         Log.d("Gyro_size",String.valueOf(tGyro.size()));
         //余った分の削除
-        if(tAcc.size() <= tGyro.size()){ //加速度を基準
+        if(tAcc.size() < tGyro.size()){ //加速度を基準
             while(tAcc.size() != tGyro.size()){
                 tGyro.remove(tGyro.size()-1);
-                xGyro.remove(xGyro.size()-1);
-                yGyro.remove(yGyro.size()-1);
-                zGyro.remove(zGyro.size()-1);
+                xGyro.remove(tGyro.size()-1);
+                yGyro.remove(tGyro.size()-1);
+                zGyro.remove(tGyro.size()-1);
             }
         }else { //角速度を基準
             while(tGyro.size() != tAcc.size()){
                 tAcc.remove(tAcc.size()-1);
-                xAcc.remove(xAcc.size()-1);
-                yAcc.remove(yAcc.size()-1);
-                zAcc.remove(zAcc.size()-1);
+                xAcc.remove(tAcc.size()-1);
+                yAcc.remove(tAcc.size()-1);
+                zAcc.remove(tAcc.size()-1);
             }
         }
 
