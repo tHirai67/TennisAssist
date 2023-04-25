@@ -8,6 +8,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -196,8 +197,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             button_flag = 0;
         }else if(button_flag == 4){
             sTextView.setText(String.format("保存済み"));
-            resample("Acc");
-            resample("Gyro");
+            synchronization();
             fileSave("Acc");
             fileSave("Gyro");
             button_flag = 5;
@@ -208,12 +208,6 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
-    }
-
-    public static String getNowDate(){
-        final DateFormat df = new SimpleDateFormat("HHmmss");
-        final Date date = new Date(System.currentTimeMillis());
-        return df.format(date);
     }
 
     public void fileSave(String type){
@@ -261,6 +255,84 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
     }
 
+
+
+    public void synchronization(){
+        //取得した加速度と角速度をリサンプリング
+        resample("Acc");
+        resample("Gyro");
+
+        //最初の時刻を合わせる
+        if(tAcc.get(0) <= tGyro.get(0)){ //角速度を基準
+            int slide_count = 0;
+            //スライドする数をカウント
+            for(int i = 0; i < tAcc.size(); i++){
+                if(tGyro.get(0) - tAcc.get(i) <= 0.02){
+                    slide_count = i;
+                    break;
+                }
+            }
+            //スライド
+            for(int i = 0; i < tAcc.size() - slide_count; i++){
+                tAcc.set(i,tAcc.get(i+slide_count));
+                xAcc.set(i,xAcc.get(i+slide_count));
+                yAcc.set(i,yAcc.get(i+slide_count));
+                zAcc.set(i,zAcc.get(i+slide_count));
+            }
+            //スライドした分の後ろの要素を削除
+            for(int i = 0; i < slide_count && i < tAcc.size(); i++){
+                tAcc.remove(tAcc.size() - 1);
+                xAcc.remove(tAcc.size() - 1);
+                yAcc.remove(tAcc.size() - 1);
+                zAcc.remove(tAcc.size() - 1);
+            }
+
+        }else { //加速度を基準
+            int slide_count = 0;
+            //スライドする数をカウント
+            for(int i = 0; i < tGyro.size(); i++){
+                if(tAcc.get(0) - tGyro.get(i) < 0.02){
+                    slide_count = i;
+                    break;
+                }
+            }
+            //スライド
+            for(int i = 0; i < tGyro.size() - slide_count - 1; i++){
+                tGyro.set(i,tGyro.get(i+slide_count));
+                xGyro.set(i,xGyro.get(i+slide_count));
+                yGyro.set(i,yGyro.get(i+slide_count));
+                zGyro.set(i,zGyro.get(i+slide_count));
+            }
+            //スライドした分の後ろの要素を削除
+            for(int i = 0; i < slide_count && i < tGyro.size(); i++){
+                tGyro.remove(tGyro.size() - 1);
+                xGyro.remove(tGyro.size() - 1);
+                yGyro.remove(tGyro.size() - 1);
+                zGyro.remove(tGyro.size() - 1);
+            }
+        }
+        Log.d("Acc_size",String.valueOf(tAcc.size()));
+        Log.d("Gyro_size",String.valueOf(tGyro.size()));
+        //余った分の削除
+        if(tAcc.size() <= tGyro.size()){ //加速度を基準
+            while(tAcc.size() != tGyro.size()){
+                tGyro.remove(tGyro.size()-1);
+                xGyro.remove(xGyro.size()-1);
+                yGyro.remove(yGyro.size()-1);
+                zGyro.remove(zGyro.size()-1);
+            }
+        }else { //角速度を基準
+            while(tGyro.size() != tAcc.size()){
+                tAcc.remove(tAcc.size()-1);
+                xAcc.remove(xAcc.size()-1);
+                yAcc.remove(yAcc.size()-1);
+                zAcc.remove(zAcc.size()-1);
+            }
+        }
+
+    }
+
+    //リサンプリングメソッド
     public void resample(String type){
         ArrayList<Double> t = new ArrayList<>();
         ArrayList<Float> x = new ArrayList<>();
