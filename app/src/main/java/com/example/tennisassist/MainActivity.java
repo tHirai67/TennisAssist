@@ -175,7 +175,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
             if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
                 time = ((System.currentTimeMillis() - pastime)/1000);
-
                 xAcc.add(event.values[0]);
                 yAcc.add(event.values[1]);
                 zAcc.add(event.values[2]);
@@ -183,7 +182,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
             }else if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
                 time = ((System.currentTimeMillis() - pastime)/1000);
-
                 xGyro.add(event.values[0]);
                 yGyro.add(event.values[1]);
                 zGyro.add(event.values[2]);
@@ -245,8 +243,25 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     public void synchronization(){
         //取得した加速度と角速度をリサンプリング
+        Log.d("tAcc",String.valueOf(tAcc.size()));
+        Log.d("xAcc",String.valueOf(xAcc.size()));
+        Log.d("yAcc",String.valueOf(yAcc.size()));
+        Log.d("zAcc",String.valueOf(zAcc.size()));
         resample("Acc");
+        Log.d("tAcc",String.valueOf(tAcc.size()));
+        Log.d("xAcc",String.valueOf(xAcc.size()));
+        Log.d("yAcc",String.valueOf(yAcc.size()));
+        Log.d("zAcc",String.valueOf(zAcc.size()));
+
+        Log.d("tGyro",String.valueOf(tGyro.size()));
+        Log.d("xGyro",String.valueOf(xGyro.size()));
+        Log.d("yGyro",String.valueOf(yGyro.size()));
+        Log.d("zGyro",String.valueOf(zGyro.size()));
         resample("Gyro");
+        Log.d("tGyro",String.valueOf(tGyro.size()));
+        Log.d("xGyro",String.valueOf(xGyro.size()));
+        Log.d("yGyro",String.valueOf(yGyro.size()));
+        Log.d("zGyro",String.valueOf(zGyro.size()));
 
         //最初の時刻を合わせる
         if(tAcc.get(0) <= tGyro.get(0)){ //角速度を基準
@@ -258,6 +273,8 @@ public class MainActivity extends Activity implements SensorEventListener {
                     break;
                 }
             }
+
+
             //スライド
             for(int i = 0; i < tAcc.size() - slide_count; i++){
                 tAcc.set(i,tAcc.get(i+slide_count));
@@ -299,21 +316,24 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
 
         //余った分の削除
-        if(tAcc.size() < tGyro.size()){ //加速度を基準
-            while(tAcc.size() != tGyro.size()){
+        if(tAcc.size() <= tGyro.size()){ //加速度を基準
+            int sizeDiff = tGyro.size() - tAcc.size();
+            for(int i=0; i<sizeDiff; i++) {
                 tGyro.remove(tGyro.size()-1);
                 xGyro.remove(tGyro.size()-1);
                 yGyro.remove(tGyro.size()-1);
                 zGyro.remove(tGyro.size()-1);
             }
-        }else { //角速度を基準
-            while(tGyro.size() != tAcc.size()){
+        } else { //角速度を基準
+            int sizeDiff = tAcc.size() - tGyro.size();
+            for(int i=0; i<sizeDiff; i++) {
                 tAcc.remove(tAcc.size()-1);
                 xAcc.remove(tAcc.size()-1);
                 yAcc.remove(tAcc.size()-1);
                 zAcc.remove(tAcc.size()-1);
             }
         }
+
 
     }
 
@@ -342,7 +362,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         //開始時間と終了時間
         double startTime = t.get(0);
-        double endTime = t.get(tAcc.size() - 1 );
+        double endTime = t.get(t.size() - 1 );
         //リサンプリングの間隔
         double interval = 1.0 / 50;
 
@@ -394,9 +414,46 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
     }
 
+    public void lowpassFilter(){
+        double sf = 0.8; //平滑化係数
+
+        //格納用の
+        ArrayList<Double> t = new ArrayList<>();
+        ArrayList<Float> x = new ArrayList<>();
+        ArrayList<Float> y = new ArrayList<>();
+        ArrayList<Float> z = new ArrayList<>();
+        ArrayList<Float> gx = new ArrayList<>();
+        ArrayList<Float> gy = new ArrayList<>();
+        ArrayList<Float> gz = new ArrayList<>();
+
+        for(int i = 0; i < tAcc.size(); i++){
+            if(i == 0){
+
+            }else{
+                tAcc.set(i,sf * tAcc.get(i - 1) + (1 - sf)*tAcc.get(i));
+                xAcc.set(i, (float) (sf * xAcc.get(i - 1) + (1 - sf) * xAcc.get(i)));
+                yAcc.set(i, (float) (sf * yAcc.get(i - 1) + (1 - sf) * yAcc.get(i)));
+                zAcc.set(i, (float) (sf * zAcc.get(i - 1) + (1 - sf) * zAcc.get(i)));
+                xGyro.set(i, (float) (sf * xGyro.get(i - 1) + (1 - sf) * xGyro.get(i)));
+                yGyro.set(i, (float) (sf * yGyro.get(i - 1) + (1 - sf) * yGyro.get(i)));
+                zGyro.set(i, (float) (sf * zGyro.get(i - 1) + (1 - sf) * zGyro.get(i)));
+            }
+        }
+    }
+
+    //初期化
     public void reset(){
         pastime = 0;
         time = 0;
-        tTextView.setText(String.format("Time:%.3f s",time));
+        xAcc.clear();
+        yAcc.clear();
+        zAcc.clear();
+        tAcc.clear();
+        xGyro.clear();
+        yGyro.clear();
+        zGyro.clear();
+        tGyro.clear();
+        tTextView.setText(String.format("Time:0 s"));
     }
+
 }
