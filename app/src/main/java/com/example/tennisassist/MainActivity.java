@@ -195,8 +195,12 @@ public class MainActivity extends Activity implements SensorEventListener {
             button_flag = 0;
         }else if(button_flag == 4){
             sTextView.setText(String.format("保存済み"));
+            //fileSave(1);
+            //fileSave(2);
             synchronization();
-            fileSave();
+            fileSave(0);
+            lowpassFilter();
+            fileSave(5);
             button_flag = 5;
         }
 
@@ -207,27 +211,47 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     }
 
-    public void fileSave(){
+    public void fileSave(int tt){
 
         //ファイル名を作成
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault());
-        String filename = sdf.format(new Date())  +  ".csv";
+        String filename = sdf.format(new Date())  +String.valueOf("_"+tt)+  ".csv";
 
         //CSVファイルを出力
         try{
             FileOutputStream fos = openFileOutput(filename, Context.MODE_PRIVATE);
             OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
             PrintWriter writer = new PrintWriter(osw);
-
-            //ヘッダー
-            writer.print("時刻,X軸加速度,Y軸加速度,Z軸加速度,時刻,時刻,X軸角速度,Y軸角速度,Z軸角速度\n");
-            //データ出力
-            int size = xAcc.size();
-            for(int i = 0; i < size; i++){
-                String line = String.format(Locale.getDefault(), "%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
-                        tAcc.get(i), xAcc.get(i), yAcc.get(i), zAcc.get(i),tGyro.get(i), xGyro.get(i), yGyro.get(i), zGyro.get(i));
-                writer.print(line);
+            if(tt == 0||tt == 5){
+                //ヘッダー
+                writer.print("時刻,X軸加速度,Y軸加速度,Z軸加速度,時刻,X軸角速度,Y軸角速度,Z軸角速度\n");
+                //データ出力
+                int size = xAcc.size();
+                for(int i = 0; i < size; i++){
+                    String line = String.format(Locale.getDefault(), "%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
+                            tAcc.get(i), xAcc.get(i), yAcc.get(i), zAcc.get(i),tGyro.get(i), xGyro.get(i), yGyro.get(i), zGyro.get(i));
+                    writer.print(line);
+                }
+            }else if(tt == 1 || tt == 3){
+                //ヘッダー
+                writer.print("時刻,X軸加速度,Y軸加速度,Z軸加速度\n");
+                //データ出力
+                int size = xAcc.size();
+                for(int i = 0; i < size; i++){
+                    String line = String.format(Locale.getDefault(), "%.3f,%.3f,%.3f,%.3f\n",tAcc.get(i), xAcc.get(i), yAcc.get(i), zAcc.get(i));
+                    writer.print(line);
+                }
+            } else if (tt == 2 || tt == 4) {
+                //ヘッダー
+                writer.print("時刻,X軸角速度,Y軸角速度,Z軸角速度\n");
+                //データ出力
+                int size = xGyro.size();
+                for(int i = 0; i < size; i++){
+                    String line = String.format(Locale.getDefault(), "%.3f,%.3f,%.3f,%.3f\n",tGyro.get(i), xGyro.get(i), yGyro.get(i), zGyro.get(i));
+                    writer.print(line);
+                }
             }
+
 
             writer.close();
             osw.close();
@@ -243,25 +267,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     public void synchronization(){
         //取得した加速度と角速度をリサンプリング
-        Log.d("tAcc",String.valueOf(tAcc.size()));
-        Log.d("xAcc",String.valueOf(xAcc.size()));
-        Log.d("yAcc",String.valueOf(yAcc.size()));
-        Log.d("zAcc",String.valueOf(zAcc.size()));
         resample("Acc");
-        Log.d("tAcc",String.valueOf(tAcc.size()));
-        Log.d("xAcc",String.valueOf(xAcc.size()));
-        Log.d("yAcc",String.valueOf(yAcc.size()));
-        Log.d("zAcc",String.valueOf(zAcc.size()));
-
-        Log.d("tGyro",String.valueOf(tGyro.size()));
-        Log.d("xGyro",String.valueOf(xGyro.size()));
-        Log.d("yGyro",String.valueOf(yGyro.size()));
-        Log.d("zGyro",String.valueOf(zGyro.size()));
         resample("Gyro");
-        Log.d("tGyro",String.valueOf(tGyro.size()));
-        Log.d("xGyro",String.valueOf(xGyro.size()));
-        Log.d("yGyro",String.valueOf(yGyro.size()));
-        Log.d("zGyro",String.valueOf(zGyro.size()));
 
         //最初の時刻を合わせる
         if(tAcc.get(0) <= tGyro.get(0)){ //角速度を基準
@@ -373,13 +380,15 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
 
         for(int i = 0; i <= resampledTime.size() - 1; i++){
-            for(int j = 0; j < t.size() - 1; j++){
-                if(t.get(j) == i){
+            Log.d("i",String.valueOf(i+":OK"));
+            for(int j = 0; j <= t.size() - 1; j++){
+                if(Math.abs(t.get(j) - resampledTime.get(i)) < 0.00001){
                     resampledX.add(x.get(j));
                     resampledY.add(y.get(j));
                     resampledZ.add(z.get(j));
                     break;
-                }if(t.get(j) < resampledTime.get(i) && resampledTime.get(i) < t.get(j+1)){
+                }
+                if(t.get(j) < resampledTime.get(i) && resampledTime.get(i) < t.get(j+1)){
                     //傾きを計算
                     float kx = (float) ((x.get(j+1) - x.get(j)) / (t.get(j+1) - t.get(j)));
                     float ky = (float) ((y.get(j+1) - y.get(j)) / (t.get(j+1) - t.get(j)));
@@ -416,21 +425,20 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     public void lowpassFilter(){
         double sf = 0.8; //平滑化係数
-
-        //格納用の
-        ArrayList<Double> t = new ArrayList<>();
-        ArrayList<Float> x = new ArrayList<>();
-        ArrayList<Float> y = new ArrayList<>();
-        ArrayList<Float> z = new ArrayList<>();
-        ArrayList<Float> gx = new ArrayList<>();
-        ArrayList<Float> gy = new ArrayList<>();
-        ArrayList<Float> gz = new ArrayList<>();
+//
+//        //格納用の
+//        ArrayList<Double> t = new ArrayList<>();
+//        ArrayList<Float> x = new ArrayList<>();
+//        ArrayList<Float> y = new ArrayList<>();
+//        ArrayList<Float> z = new ArrayList<>();
+//        ArrayList<Float> gx = new ArrayList<>();
+//        ArrayList<Float> gy = new ArrayList<>();
+//        ArrayList<Float> gz = new ArrayList<>();
 
         for(int i = 0; i < tAcc.size(); i++){
             if(i == 0){
 
             }else{
-                tAcc.set(i,sf * tAcc.get(i - 1) + (1 - sf)*tAcc.get(i));
                 xAcc.set(i, (float) (sf * xAcc.get(i - 1) + (1 - sf) * xAcc.get(i)));
                 yAcc.set(i, (float) (sf * yAcc.get(i - 1) + (1 - sf) * yAcc.get(i)));
                 zAcc.set(i, (float) (sf * zAcc.get(i - 1) + (1 - sf) * zAcc.get(i)));
