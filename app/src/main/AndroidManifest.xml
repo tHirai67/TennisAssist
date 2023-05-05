@@ -24,6 +24,7 @@
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
 
+        <!-- MainActivity       -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -34,6 +35,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- MeasureActivity       -->
+        <activity android:name=".MeasureActivity"/>
+        <!-- MeasureActivity       -->
+        <activity android:name=".FileActivity"/>
+
     </application>
 
 </manifest>

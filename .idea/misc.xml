@@ -3,9 +3,21 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="app/src/main/res/drawable/b_acc.xml" value="0.225" />
         <entry key="app/src/main/res/drawable/b_file.xml" value="0.324" />
+        <entry key="app/src/main/res/drawable/b_fixAcc.xml" value="0.277" />
+        <entry key="app/src/main/res/drawable/b_fixGyro.xml" value="0.277" />
+        <entry key="app/src/main/res/drawable/b_gyro.xml" value="0.225" />
+        <entry key="app/src/main/res/drawable/b_ready.xml" value="0.277" />
+        <entry key="app/src/main/res/drawable/blue_btn.xml" value="0.277" />
+        <entry key="app/src/main/res/drawable/green_btn.xml" value="0.277" />
+        <entry key="app/src/main/res/drawable/purple_btn.xml" value="0.277" />
+        <entry key="app/src/main/res/drawable/red_btn.xml" value="0.14" />
+        <entry key="app/src/main/res/drawable/white_btn.xml" value="0.1285" />
+        <entry key="app/src/main/res/drawable/yellow_btn.xml" value="0.277" />
         <entry key="app/src/main/res/layout/activity_file.xml" value="1.3008720930232558" />
-        <entry key="app/src/main/res/layout/activity_main.xml" value="0.7078488372093024" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.8729508196721312" />
+        <entry key="app/src/main/res/layout/activity_measure.xml" value="1.0276162790697674" />
       </map>
     </option>
   </component>
