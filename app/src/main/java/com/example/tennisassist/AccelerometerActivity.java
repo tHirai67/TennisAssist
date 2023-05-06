@@ -11,21 +11,21 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class GyroscopeActivity extends Activity implements SensorEventListener {
+public class AccelerometerActivity extends Activity implements SensorEventListener {
 
     private TextView dTextView;
-    private SensorManager gyroSensorManager;
-    private float gx,gy,gz;
+    private SensorManager accSensorManager;
+    private float x,y,z;
     private Button back_btn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_gyroscope);
+        setContentView(R.layout.activity_accelerometer);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         dTextView = findViewById(R.id.text);
-        gyroSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        accSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
         back_btn = findViewById(R.id.b_back);
         back_btn.setOnClickListener(new View.OnClickListener() {
@@ -40,25 +40,25 @@ public class GyroscopeActivity extends Activity implements SensorEventListener {
     @Override
     public void onStart(){
         super.onStart();
-        Sensor gyro_sensor = gyroSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        gyroSensorManager.registerListener(this, gyro_sensor, SensorManager.SENSOR_DELAY_NORMAL);
+        Sensor acc_sensor = accSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        accSensorManager.registerListener(this, acc_sensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
     public void onDestroy(){
         super.onDestroy();
-        gyroSensorManager.unregisterListener(this);
+        accSensorManager.unregisterListener(this);
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
-            gx = event.values[0];
-            gy = event.values[1];
-            gz = event.values[2];
+        if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
+            x = event.values[0];
+            y = event.values[1];
+            z = event.values[2];
 
             if(dTextView != null){
-                dTextView.setText(String.format("X:%f\nY:%f\nZ:%f\n",gx,gy,gz));
+                dTextView.setText(String.format("X:%f\nY:%f\nZ:%f\n",x,y,z));
                 dTextView.setTextSize(20.0f);
             }
 

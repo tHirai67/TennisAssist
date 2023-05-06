@@ -15,7 +15,10 @@
         <entry key="app/src/main/res/drawable/red_btn.xml" value="0.14" />
         <entry key="app/src/main/res/drawable/white_btn.xml" value="0.1285" />
         <entry key="app/src/main/res/drawable/yellow_btn.xml" value="0.277" />
+        <entry key="app/src/main/res/layout/activity_acceleration.xml" value="1.2020348837209303" />
+        <entry key="app/src/main/res/layout/activity_accelerometer.xml" value="0.6052267742972088" />
         <entry key="app/src/main/res/layout/activity_file.xml" value="1.3008720930232558" />
+        <entry key="app/src/main/res/layout/activity_gyroscope.xml" value="0.7773722627737226" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.8729508196721312" />
         <entry key="app/src/main/res/layout/activity_measure.xml" value="1.0276162790697674" />
       </map>

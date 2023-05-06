@@ -38,8 +38,12 @@
 
         <!-- MeasureActivity       -->
         <activity android:name=".MeasureActivity"/>
-        <!-- MeasureActivity       -->
+        <!-- FileActivity       -->
         <activity android:name=".FileActivity"/>
+        <!-- AccelerometerActivity       -->
+        <activity android:name=".AccelerometerActivity"/>
+        <!-- GyroscopeActivity       -->
+        <activity android:name=".GyroscopeActivity"/>
 
     </application>
 

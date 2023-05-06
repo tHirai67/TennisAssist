@@ -47,7 +47,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         fixAcc_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, MeasureActivity.class);
+                Intent intent = new Intent(MainActivity.this, AccelerometerActivity.class);
                 startActivity(intent);
             }
         });
@@ -55,7 +55,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         fixGyro_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, MeasureActivity.class);
+                Intent intent = new Intent(MainActivity.this, GyroscopeActivity.class);
                 startActivity(intent);
             }
         });
