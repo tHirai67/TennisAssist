@@ -20,7 +20,8 @@
         <entry key="app/src/main/res/layout/activity_file.xml" value="1.3008720930232558" />
         <entry key="app/src/main/res/layout/activity_gyroscope.xml" value="0.7773722627737226" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.8729508196721312" />
-        <entry key="app/src/main/res/layout/activity_measure.xml" value="1.0276162790697674" />
+        <entry key="app/src/main/res/layout/activity_measure.xml" value="0.663343302408854" />
+        <entry key="app/src/main/res/layout/activity_result.xml" value="0.7807017543859649" />
       </map>
     </option>
   </component>
