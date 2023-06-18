@@ -109,11 +109,19 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
 
         if(errorFlag_acc < 10 && errorFlag_gyro < 10){
-            ready_btn.setBackgroundResource(R.drawable.green_btn);
             ready_btn.setEnabled(true);
+            ready_btn.setVisibility(View.VISIBLE);
+            fixAcc_btn.setEnabled(false);
+            fixGyro_btn.setEnabled(false);
+            fixAcc_btn.setVisibility(View.INVISIBLE);
+            fixGyro_btn.setVisibility(View.INVISIBLE);
         }else{
-            ready_btn.setBackgroundResource(R.drawable.white_btn);
             ready_btn.setEnabled(false);
+            ready_btn.setVisibility(View.INVISIBLE);
+            fixAcc_btn.setEnabled(true);
+            fixGyro_btn.setEnabled(true);
+            fixAcc_btn.setVisibility(View.VISIBLE);
+            fixGyro_btn.setVisibility(View.VISIBLE);
         }
 
     }

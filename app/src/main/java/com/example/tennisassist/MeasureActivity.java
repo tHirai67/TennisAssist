@@ -39,6 +39,8 @@ public class MeasureActivity extends Activity implements SensorEventListener {
     private ArrayList<Float> zGyro= new ArrayList<>();
     private ArrayList<Double> tGyro = new ArrayList<>();
 
+    private boolean MeasureFlag = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,8 +67,7 @@ public class MeasureActivity extends Activity implements SensorEventListener {
             @Override
             public void onClick(View v) {
                 //加速度センサと角速度センサを登録
-                accSensorManager.registerListener(MeasureActivity.this, accSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
-                gyroSensorManager.registerListener(MeasureActivity.this, gyroSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_NORMAL);
+                MeasureFlag = true;
                 Toast.makeText(MeasureActivity.this, "計測を開始しました．", Toast.LENGTH_SHORT).show();
                 start_btn.setVisibility(View.INVISIBLE);
                 stop_btn.setVisibility(View.VISIBLE);
@@ -90,6 +91,8 @@ public class MeasureActivity extends Activity implements SensorEventListener {
             @Override
             public void onClick(View v) {
                 reset();
+                accSensorManager.registerListener(MeasureActivity.this, accSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
+                gyroSensorManager.registerListener(MeasureActivity.this, gyroSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_NORMAL);
                 Toast.makeText(MeasureActivity.this, "計測データをリセットしました．", Toast.LENGTH_SHORT).show();
                 start_btn.setVisibility(View.VISIBLE);
                 reset_btn.setVisibility(View.INVISIBLE);
@@ -118,6 +121,8 @@ public class MeasureActivity extends Activity implements SensorEventListener {
     @Override
     public void onStart(){
         super.onStart();
+        accSensorManager.registerListener(MeasureActivity.this, accSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
+        gyroSensorManager.registerListener(MeasureActivity.this, gyroSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE), SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
@@ -128,27 +133,27 @@ public class MeasureActivity extends Activity implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+        if(MeasureFlag == true){
+            if(pastime == 0){
+                pastime = System.currentTimeMillis();
+            }
 
-        if(pastime == 0){
-            pastime = System.currentTimeMillis();
+            if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
+                time = ((System.currentTimeMillis() - pastime)/1000);
+                xAcc.add(event.values[0]);
+                yAcc.add(event.values[1]);
+                zAcc.add(event.values[2]);
+                tAcc.add(time);
+
+            }else if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
+                time = ((System.currentTimeMillis() - pastime)/1000);
+                xGyro.add(event.values[0]);
+                yGyro.add(event.values[1]);
+                zGyro.add(event.values[2]);
+                tGyro.add(time);
+            }
+            tTextView.setText(String.format("Time:%.3f.s",time));
         }
-
-        if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            time = ((System.currentTimeMillis() - pastime)/1000);
-            xAcc.add(event.values[0]);
-            yAcc.add(event.values[1]);
-            zAcc.add(event.values[2]);
-            tAcc.add(time);
-
-        }else if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
-            time = ((System.currentTimeMillis() - pastime)/1000);
-            xGyro.add(event.values[0]);
-            yGyro.add(event.values[1]);
-            zGyro.add(event.values[2]);
-            tGyro.add(time);
-        }
-        tTextView.setText(String.format("Time:%.3f.s",time));
-
     }
 
     @Override
@@ -158,6 +163,7 @@ public class MeasureActivity extends Activity implements SensorEventListener {
 
     //初期化
     public void reset(){
+        MeasureFlag = false;
         pastime = 0;
         time = 0;
         xAcc.clear();
