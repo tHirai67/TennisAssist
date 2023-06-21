@@ -2,31 +2,21 @@ package com.example.tennisassist;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.tensorflow.lite.Interpreter;
-
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
@@ -49,9 +39,7 @@ public class ResultActivity extends Activity {
     private ArrayList<Float> norm = new ArrayList<>();
     private ArrayList<Float> diff = new ArrayList<>();
 
-    private Interpreter tflite;
-    private float[][] inputBuffer;
-    private float[][] outputBuffer;
+    private int ForehandCount, BackhandCount, OtherCount;
 
     private ArrayList<ArrayList<Float>> futureValueList = new ArrayList<>();
 
@@ -76,20 +64,17 @@ public class ResultActivity extends Activity {
         save_btn.setVisibility(View.VISIBLE);
         back_btn.setVisibility(View.VISIBLE);
 
+
         save_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //fileSave("acc");
-                //fileSave("gyro");
-                //fileSave("acc&gyro");
-                fileSave("future");
-
+                fileSave("acc");
+                fileSave("gyro");
                 Toast.makeText(ResultActivity.this, "計測データを保存しました．", Toast.LENGTH_SHORT).show();
                 save_btn.setVisibility(View.INVISIBLE);
 
-                //strokeCount result display
 
-                cTextView.setText(String.valueOf(""));
+
             }
         });
 
@@ -105,6 +90,9 @@ public class ResultActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
+
+        StrokeDetectorClass sd = new StrokeDetectorClass();
+
 
         //加速度と角速度の同期
         synchronization();
@@ -123,7 +111,6 @@ public class ResultActivity extends Activity {
         //検出回数を表示
         int strokesCount = strokesIndexList.size();
 
-
         //特徴量の計算
         for(int i = 0; i < strokesCount; i++){
             ArrayList<Integer> stroke = strokesIndexList.get(i);
@@ -137,15 +124,53 @@ public class ResultActivity extends Activity {
                 gy.add(yGyro.get(j));
                 gz.add(zGyro.get(j));
             }
-            Log.d("DATA",String.valueOf(gx.get(0)));
-            ArrayList<Float> fv = getFutureValues(gx, gy, gz);
-            futureValueList.add(fv);
+
+
+            //特徴量を取得
+            FeatureValueCalculatorClass fvc = new FeatureValueCalculatorClass();
+            ArrayList<Float> fvX = fvc.getFeatureValues(gx);
+            ArrayList<Float> fvY = fvc.getFeatureValues(gy);
+            ArrayList<Float> fvZ = fvc.getFeatureValues(gz);
+
+            ArrayList<Float> featureValues = fvc.integration(fvX, fvY, fvZ);
+
+            //特徴量リストに追加
+            futureValueList.add(featureValues);
+
+            Log.d("stroke",strokeClassification(featureValues));
+
+            switch (strokeClassification(featureValues)){
+                case "その他":
+                    OtherCount += 1;
+                    break;
+                case "フォアハンド":
+                    ForehandCount += 1;
+                    break;
+                case "バックハンド":
+                    BackhandCount += 1;
+                    break;
+                default:
+                    break;
+            }
         }
 
-        //strokesClassifier(futureValueList);
+        if(ForehandCount == 0 && BackhandCount == 0 && OtherCount == 0){
+            cTextView.setText("Nothing!!");
+        }else{
+            cTextView.setText("Fore："+ForehandCount+"\nBack："+BackhandCount+"\nOther："+OtherCount);
+        }
 
     }
 
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        OtherCount = 0;
+        ForehandCount = 0;
+        BackhandCount = 0;
+    }
+
+    //ストロークの検出メソッド
     public ArrayList<ArrayList<Integer>> StrokeDetection(){
         //検出したストロークのデータのインデックス(100データ)を格納する配列
         ArrayList<ArrayList<Integer>> strokesList = new ArrayList<>();
@@ -246,17 +271,7 @@ public class ResultActivity extends Activity {
             FileOutputStream fos = openFileOutput(filename, Context.MODE_PRIVATE);
             OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
             PrintWriter writer = new PrintWriter(osw);
-            if(type == "acc&gyro"){
-                //ヘッダー
-                writer.print("時刻,X軸加速度,Y軸加速度,Z軸加速度,X軸角速度,Y軸角速度,Z軸角速度\n");
-                //データ出力
-                int size = xAcc.size();
-                for(int i = 0; i < size; i++){
-                    String line = String.format(Locale.getDefault(), "%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
-                            time.get(i), xAcc.get(i), yAcc.get(i), zAcc.get(i), xGyro.get(i), yGyro.get(i), zGyro.get(i));
-                    writer.print(line);
-                }
-            }else if(type == "acc"){
+            if(type == "acc"){
                 //ヘッダー
                 writer.print("時刻,X軸加速度,Y軸加速度,Z軸加速度\n");
                 //データ出力
@@ -272,18 +287,6 @@ public class ResultActivity extends Activity {
                 int size = xGyro.size();
                 for (int i = 0; i < size; i++) {
                     String line = String.format(Locale.getDefault(), "%.3f,%.3f,%.3f,%.3f\n", tGyro.get(i), xGyro.get(i), yGyro.get(i), zGyro.get(i));
-                    writer.print(line);
-                }
-            } else if (type == "future"){
-                //ヘッダー
-                writer.print("No.,x最大値,y最大値,z最大値,x最小値,y最小値,z最小値,x範囲,y範囲,z範囲,x分散,y分散,z分散,x標準偏差,y標準偏差,z標準偏差,x尖度,y尖度,z尖度\n");
-                //データ出力
-                int size = futureValueList.size();
-
-                for (int i = 0; i < size; i++) {
-                    ArrayList<Float> stroke = futureValueList.get(i);
-                    String line = String.format(Locale.getDefault(), "%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
-                            i+1,stroke.get(0),stroke.get(1),stroke.get(2),stroke.get(3),stroke.get(4),stroke.get(5),stroke.get(6),stroke.get(7),stroke.get(8),stroke.get(9),stroke.get(10),stroke.get(11),stroke.get(12),stroke.get(13),stroke.get(14),stroke.get(15),stroke.get(16),stroke.get(17));
                     writer.print(line);
                 }
             }
@@ -377,45 +380,49 @@ public class ResultActivity extends Activity {
         time.addAll(tAcc);
     }
 
-//    //ストローク分類メソッド
-//    public void strokesClassifier(ArrayList<ArrayList<Float>> futureList){
-//        for()
-//
-//        // 入力と出力のバッファの初期化
-//        inputBuffer = new float[1][18]; // 入力は1つのデータポイントで18の特徴量を持つ
-//        outputBuffer = new float[1][3]; // 出力は1つのデータポイントで3つのクラスの確率を持つ
-//
-//        // 特徴量の設定
-//        inputBuffer[0][0] = max_x;
-//        inputBuffer[0][1] = max_y;
-//        inputBuffer[0][2] = max_z;
-//        inputBuffer[0][3] = min_x;
-//        inputBuffer[0][4] = min_y;
-//        inputBuffer[0][5] = min_z;
-//        inputBuffer[0][6] = range_x;
-//        inputBuffer[0][7] = range_y;
-//        inputBuffer[0][8] = range_z;
-//        inputBuffer[0][9] = kurtosis_x;
-//        inputBuffer[0][10] = kurtosis_y;
-//        inputBuffer[0][11] = kurtosis_z;
-//        inputBuffer[0][12] = var_x;
-//        inputBuffer[0][13] = var_y;
-//        inputBuffer[0][14] = var_z;
-//        inputBuffer[0][15] = std_x;
-//        inputBuffer[0][16] = std_y;
-//        inputBuffer[0][17] = std_z;
-//    }
 
-    //TensorFlowLiteモデルの読み込み
-    private MappedByteBuffer loadModelFile() throws IOException {
-        AssetManager assetManager = getAssets();
-        AssetFileDescriptor fileDescriptor = assetManager.openFd("SC.tflite");
-        FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-        FileChannel fileChannel = inputStream.getChannel();
-        long startOffset = fileDescriptor.getStartOffset();
-        long declaredLength = fileDescriptor.getDeclaredLength();
-        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+
+    //ストローク分類メソッド
+    public String strokeClassification(ArrayList<Float> features){
+        StrokeClassifierClass classifier = new StrokeClassifierClass(getApplicationContext(),"SC.tflite");
+        String predictedLabel = "";
+
+        //特徴量の設定
+        float max_x = features.get(0);
+        float max_y = features.get(1);
+        float max_z = features.get(2);
+        float min_x = features.get(3);
+        float min_y = features.get(4);
+        float min_z = features.get(5);
+        float range_x = features.get(6);
+        float range_y = features.get(7);
+        float range_z = features.get(8);
+
+        //順番がモデルと変わっているので注意
+        float var_x = features.get(9);
+        float var_y = features.get(10);
+        float var_z = features.get(11);
+        float std_x = features.get(12);
+        float std_y = features.get(13);
+        float std_z = features.get(14);
+        float kurtosis_x = features.get(15);
+        float kurtosis_y = features.get(16);
+        float kurtosis_z = features.get(17);
+
+        // 入力と出力のバッファの初期化
+        float[] inputData = {
+                max_x, max_y, max_z, min_x, min_y, min_z, range_x, range_y, range_z,
+                kurtosis_x, kurtosis_y, kurtosis_z, var_x, var_y, var_z, std_x, std_y, std_z
+        };
+
+        if(classifier != null){
+            predictedLabel = classifier.predict(inputData);
+        }
+
+        return predictedLabel;
     }
+
+
 
     //リサンプリングメソッド
     public void resample(String type){
@@ -554,80 +561,5 @@ public class ResultActivity extends Activity {
 
         }
         return diffValues;
-    }
-
-    public ArrayList<Float> getFutureValues(ArrayList<Float> x, ArrayList<Float> y, ArrayList<Float> z){
-
-
-        //最大値
-        float max_x = Collections.max(x);
-        float max_y = Collections.max(y);
-        float max_z = Collections.max(z);
-        //最小値
-        float min_x = Collections.min(x);
-        float min_y = Collections.min(y);
-        float min_z = Collections.min(z);
-        //範囲
-        float range_x = max_x - min_x;
-        float range_y = max_y - min_y;
-        float range_z = max_z - min_z;
-
-        //分散
-        float var_x = var(x);
-        float var_y = var(y);
-        float var_z = var(z);
-
-        //標準偏差
-        float std_x = (float) Math.sqrt(var_x);
-        float std_y = (float) Math.sqrt(var_y);
-        float std_z = (float) Math.sqrt(var_z);
-
-        //尖度
-        float kurtosis_x = kurtosis(x);
-        float kurtosis_y = kurtosis(y);
-        float kurtosis_z = kurtosis(z);
-
-        ArrayList<Float> fv = new ArrayList<>(Arrays.asList(max_x, max_y, max_z, min_x, min_y, min_z, range_x, range_y, range_z, var_x, var_y, var_z, std_x, std_y, std_z, kurtosis_x, kurtosis_y, kurtosis_z));
-
-        return fv;
-    }
-
-    //分散値を計算するメソッド
-    public float var(ArrayList<Float> data){
-        int n = data.size();
-        float mean = 0;
-        float variance = 0;
-
-        for(int i = 0; i < n; i++){
-            mean += data.get(i);
-        }
-        mean /= n;
-
-        for(int i = 0; i < n; i++){
-            variance += (data.get(i) - mean)*(data.get(i) - mean);
-        }
-        variance /= n;
-
-        return variance;
-    }
-
-    //尖度を計算するメソッド
-    public float kurtosis(ArrayList<Float> data){
-        int n = data.size();
-        float mean = 0;
-        float variance = var(data);
-        float kur = 0;
-
-        for(int i = 0; i < n; i++){
-            mean += data.get(i);
-        }
-        mean /= n;
-
-        for(int i = 0; i < n; i++){
-            float d = data.get(i);
-            kur += (d - mean) * (d - mean) * (d - mean) * (d - mean);
-        }
-        kur /= n * variance * variance;
-        return kur - 3f;
     }
 }

@@ -54,6 +54,7 @@ public class StrokeClassifierClass {
             }
         }
 
+        //旧モデルと新モデルは順番が違うので注意
         switch (predictedLabel){
             case 0:
                 return "その他";
